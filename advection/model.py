@@ -76,6 +76,13 @@ class Advection1DModel(BaseModel):
         fig = draw_signal1D(samples, values, y_max=1.0)
         self.tb.add_figure("field", fig, global_step=self.train_step)
 
+
+        grad_u, samples = self.sample_field_gradient(self.vis_resolution)
+        grad_u_detach = grad_u.detach().cpu().numpy()
+        samples = samples.detach().cpu().numpy()
+        fig_grad = draw_signal1D(samples, grad_u_detach, y_max=10.)
+        self.tb.add_figure("field_grad", fig_grad, global_step=self.train_step)
+
     @BaseModel._timestepping
     def step(self):
         """advection: dudt = -(vel \cdot grad)u"""
@@ -122,7 +129,7 @@ class Advection1DModel(BaseModel):
         values, samples = self.sample_field(self.vis_resolution, return_samples=True)
         values = values.detach().cpu().numpy()
         samples = samples.detach().cpu().numpy()
-        fig = draw_signal1D(samples, values, y_max=1.0)
+        fig = draw_signal1D(samples, values, y_max=10.0)
         self.tb.add_figure("field", fig, global_step=self.train_step)
         
 
@@ -134,8 +141,20 @@ class Advection1DModel(BaseModel):
         samples = samples.detach().cpu().numpy()
         fig = draw_signal1D(samples, values, y_max=1.0)
 
-        save_path = os.path.join(output_folder, f"t{self.timestep:03d}.png")
+        save_path = os.path.join(output_folder, f"t{self.timestep:03d}_values.png")
         save_figure(fig, save_path)
 
         save_path = os.path.join(output_folder, f"t{self.timestep:03d}.npz")
         np.savez(save_path, values)
+
+
+        grad_u, samples = self.sample_field_gradient(self.vis_resolution)
+        grad_u_detach = grad_u.detach().cpu().numpy()
+        samples = samples.detach().cpu().numpy()
+        fig_grad = draw_signal1D(samples, grad_u_detach, y_max=1.0)
+
+        save_path = os.path.join(output_folder, f"t{self.timestep:03d}_grad.png")
+        save_figure(fig_grad, save_path)
+
+        save_path = os.path.join(output_folder, f"t{self.timestep:03d}_grad.npz")
+        np.savez(save_path, grad_u_detach)
