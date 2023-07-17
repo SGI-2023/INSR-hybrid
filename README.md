@@ -29,13 +29,14 @@ bash scripts/xxx.sh
 ```
 
 To detach from the container, you can find do: https://www.howtogeek.com/devops/how-to-detach-from-a-docker-container-without-stopping-it/
+
 To re-enter the container
 ```
 docker attach docker_id
 ```
 docker_id is the number after root@ on your command line when you created the container.
 
-
+Feel free to do whatever crazy things inside the container. No problem! But do not do anything crazy outside. However, you will need to **do version control (i.e., git pull/commit/push) outside the docker**.
 
 
 ## Experiments
