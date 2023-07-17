@@ -108,7 +108,7 @@ class Config(object):
         group.add_argument('--lr', type=float, default=1e-4, help='initial learning rate')
         group.add_argument('-sr', '--sample_resolution', type=int, default=128, help='number of samples per iterations')
         group.add_argument('-vr', '--vis_resolution', type=int, default=500)
-        group.add_argument('--early_stop', action=argparse.BooleanOptionalAction, default=True)
+        group.add_argument('--early_stop', action='store_true')
     
     def _add_recap_config_(self, parser):
         """recap configuration"""
