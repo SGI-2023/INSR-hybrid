@@ -32,7 +32,24 @@ class Advection1DModel(BaseModel):
         out = self.field(grid_samples).squeeze(-1)
         if return_samples:
             return out, grid_samples.squeeze(-1)
+        
+
         return out
+    
+    def sample_field_gradient(self, resolution):
+
+        """sample current field with uniform grid points"""
+        grid_samples = sample_uniform(resolution, 1, device=self.device) * self.length / 2
+        grid_samples.requires_grad_()
+        out_field = self.field(grid_samples)
+
+        grad_computed = gradient(out_field, grid_samples)
+
+        grad_computed_flat = grad_computed.squeeze(-1)
+        grid_samples_flat = grid_samples.squeeze(-1)
+
+        return grad_computed_flat, grid_samples_flat
+
 
     @BaseModel._timestepping
     def initialize(self):
@@ -88,15 +105,28 @@ class Advection1DModel(BaseModel):
         bc_loss = torch.mean(bound_u ** 2) * 1.
         loss_dict.update({'bc': bc_loss})
 
+
+
         return loss_dict
 
     def _vis_advect(self):
         """visualization on tb during training"""
+        grad_u, samples = self.sample_field_gradient(self.vis_resolution)
+        grad_u_detach = grad_u.detach().cpu().numpy()
+        samples = samples.detach().cpu().numpy()
+        fig_grad = draw_signal1D(samples, grad_u_detach, y_max=1.0)
+        self.tb.add_figure("field_grad", fig_grad, global_step=self.train_step)
+
+
+
         values, samples = self.sample_field(self.vis_resolution, return_samples=True)
         values = values.detach().cpu().numpy()
         samples = samples.detach().cpu().numpy()
         fig = draw_signal1D(samples, values, y_max=1.0)
         self.tb.add_figure("field", fig, global_step=self.train_step)
+        
+
+
 
     def write_output(self, output_folder):
         values, samples = self.sample_field(self.vis_resolution, return_samples=True)

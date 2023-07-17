@@ -5,5 +5,5 @@ python main.py advection \
     --hidden_features 20 \
     -sr 5000 \
     --dt 0.05 \
-    -T 240 \
+    -T 5 \
     -g 0
