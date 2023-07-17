@@ -10,17 +10,32 @@ Official implementation for the paper:
 > <sup>1</sup>Columbia University, <sup>2</sup>University of Toronto, <sup>3</sup>Massachusetts Institute of Technology <br>
 > ICML 2023
 
-
-## Installation
-Prerequisites:
-- python 3.9+
-- An NVIDIA GPU
-
-Install dependencies with pip:
-```bash
-pip install -r requirements.txt
-# NOTE: check https://pytorch.org/ for pytorch installation command for your CUDA version
+## clone
 ```
+cd /home/ubuntu/sgi/your_folder_name
+git clone git@github.com:SGI-2023/INSR-hybrid.git
+cd INSR-hybrid
+```
+
+## run program inside docker container
+```
+docker run --gpus all -it -v $HOME:/home/ubuntu sgi-2023
+```
+The above command will start a docker container.
+Once you are in this container,
+```
+cd /home/ubuntu/sgi/your_folder_name/INSR-hybrid
+bash scripts/xxx.sh
+```
+
+To detach from the container, you can find do: https://www.howtogeek.com/devops/how-to-detach-from-a-docker-container-without-stopping-it/
+To re-enter the container
+```
+docker attach docker_id
+```
+docker_id is the number after root@ on your command line when you created the container.
+
+
 
 
 ## Experiments
