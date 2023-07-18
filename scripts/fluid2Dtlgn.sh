@@ -7,4 +7,4 @@ python main.py fluid \
     -vr 32 \
     --dt 0.05 \
     -T 100 \
-    -g 1
+    -g 0

@@ -78,7 +78,9 @@ class BaseModel(ABC):
 
         self.optimizer.step()
         if self.scheduler is not None:
-            self.scheduler.step(loss_dict['main'])
+            if 'bc' in loss_dict.keys():
+                del loss_dict['bc']
+            self.scheduler.step(sum(loss_dict.values()))
 
     def _set_require_grads(self, model, require_grad):
         for p in model.parameters():

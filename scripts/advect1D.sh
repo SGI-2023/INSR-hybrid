@@ -1,5 +1,5 @@
 python main.py advection \
-    --tag advect1D_ex1 \
+    --tag advect1D_ex1_grad \
     --init_cond example1 \
     --num_hidden_layers 2 \
     --hidden_features 20 \
