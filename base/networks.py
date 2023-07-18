@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import numpy as np
 import math
+import tinycudann as tcnn
+from .tcnn_nets import HashGridMLP
 
 
 def get_network(cfg, in_features, out_features):
@@ -9,13 +11,50 @@ def get_network(cfg, in_features, out_features):
         return MLP(in_features, out_features, cfg.num_hidden_layers,
             cfg.hidden_features, nonlinearity=cfg.nonlinearity)
     elif cfg.network == 'hashgrid':
-        from .tcnn_nets import HashGridMLP
-        return HashGridMLP(in_features, out_features)
+        return HashGridSIREN(in_features, out_features, cfg.num_hidden_layers,
+            cfg.hidden_features, nonlinearity=cfg.nonlinearity)
     elif cfg.network == 'ffn':
         return FFN(in_features, out_features, cfg.num_hidden_layers,
             cfg.hidden_features)
     else:
         raise NotImplementedError
+    
+
+
+### hashgrid
+class HashGridSIREN(nn.Module):
+    def __init__(self, in_features, out_features, num_hidden_layers, hidden_features,
+                 outermost_linear=True, nonlinearity='relu', weight_init=None):
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+
+        self.encoding = tcnn.Encoding(
+            in_features,
+            dtype=torch.float32,
+            encoding_config={
+                "otype": "Grid",
+                "type": "Hash",
+                "n_levels": 16,
+                "n_features_per_level": 2,
+                "log2_hashmap_size": 19,
+                "base_resolution": 16,
+                "per_level_scale": 1.5,
+                "interpolation": "Linear"
+            },
+        )
+
+        self.net = MLP(self.encoding.n_output_dims, out_features, num_hidden_layers,
+            hidden_features, nonlinearity=nonlinearity)
+
+    def forward(self, x):
+        # x in [-1, 1]
+        # assert x.min() >= -1 - 1e-3 and x.max() <= 1 + 1e-3
+        x = (x + 1) / 2 # [0, 1]
+        x_shape = x.shape
+        output = self.encoding(x.view(-1, self.in_features))
+        output = self.net(output).view(list(x_shape[:-1]) + [self.out_features])
+        return output
 
 
 ############################### SIREN ################################

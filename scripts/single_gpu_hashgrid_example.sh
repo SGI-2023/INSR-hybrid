@@ -1,0 +1,14 @@
+python main.py fluid \
+    --tag sanity_hash_network_again \
+    --init_cond taylorgreen_multi \
+    --num_hidden_layers 0 \
+    --hidden_features 64 \
+    --network hashgrid \
+    --nonlinearity relu \
+    --lr 0.01 \
+    -sr 1024 \
+    -vr 32 \
+    --dt 0.05 \
+    -T 0 \
+    --max_n_iters 10000 \
+    -g 0
