@@ -32,6 +32,18 @@ class Fluid2DModel(BaseModel):
         if return_samples:
             return out, grid_samples
         return out
+    
+    def sample_velocity_field_gradient(self, resolution):
+        grid_samples = sample_uniform(resolution, 2, device=self.device, flatten=False).requires_grad_(True)
+        grid_samples.requires_grad_()
+        out_field = self.velocity_field(grid_samples)
+
+        grad_computed = gradient(out_field, grid_samples)
+        
+        grad_computed_flat = grad_computed
+        grid_samples_flat = grid_samples
+
+        return grad_computed_flat, grid_samples_flat
 
     @BaseModel._timestepping
     def initialize(self):
@@ -230,3 +242,11 @@ class Fluid2DModel(BaseModel):
 
         save_path = os.path.join(output_folder, f"t{self.timestep:03d}.npy")
         np.save(save_path, grid_u)
+
+        grid_u, grid_samples = self.sample_velocity_field_gradient(self.vis_resolution)
+        grid_u = grid_u.detach().cpu().numpy()
+        grid_samples = grid_samples.detach().cpu().numpy()
+
+        fig = draw_vector_field2D(grid_u, grid_samples)
+        save_path = os.path.join(output_folder, f"t{self.timestep:03d}_vel_grad1.png")
+        save_figure(fig, save_path)
