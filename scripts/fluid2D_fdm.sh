@@ -1,0 +1,13 @@
+python main.py fluid \
+    --tag fd_tlgnM_hashgrid_2 \
+    --init_cond taylorgreen_multi \
+    --num_hidden_layers 3 \
+    --hidden_features 32 \
+    --network hashgrid \
+    --lr 0.01 \
+    -sr 1024 \
+    -vr 32 \
+    --dt 0.05 \
+    -T 0 \
+    --max_n_iters 10000 \
+    -g 0

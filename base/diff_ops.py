@@ -30,35 +30,54 @@ def hessian(y, x):
     return h, status
 
 
-def laplace(y, x, normalize=False, eps=0., return_grad=False):
+def laplace(y, x, normalize=False, eps=0., return_grad=False, mode = "finite_diff"):
     grad = gradient(y, x)
     if normalize:
         grad = grad / (grad.norm(dim=-1, keepdim=True) + eps)
-    div = divergence(grad, x)
-
+    
+    if mode == "finite_diff":
+        div = divergence_finite_diff(grad)
+    else:
+        div = divergence(grad, x)
+    
     if return_grad:
         return div, grad
     return div
 
 
-def divergence(y, x):
+def divergence(y, x, mode = "finite_diff"):
+
+    if mode == "finite_diff":
+        div = divergence_finite_diff(y)
+    else:
+        div = 0.
+        for i in range(y.shape[-1]):
+            div += grad(
+                y[..., i], x, torch.ones_like(y[..., i]),
+                create_graph=True)[0][..., i:i+1]
+    return div
+
+def divergence_finite_diff(y):
     div = 0.
     for i in range(y.shape[-1]):
-        div += grad(
-            y[..., i], x, torch.ones_like(y[..., i]),
-            create_graph=True)[0][..., i:i+1]
+        div += torch.gradient(y[..., i])
     return div
 
 
-def gradient(y, x, grad_outputs=None):
-    if grad_outputs is None:
-        grad_outputs = torch.ones_like(y)
-    grad = torch.autograd.grad(
-        y, [x], grad_outputs=grad_outputs, create_graph=True)[0]
+def gradient(y, x, grad_outputs=None, mode="finite_diff"):
+
+    if mode == "autodiff":
+        if grad_outputs is None:
+            grad_outputs = torch.ones_like(y)
+        grad = torch.autograd.grad(
+            y, [x], grad_outputs=grad_outputs, create_graph=True)[0]
+    elif mode == "finite_diff":
+        grad = torch.gradient(y)
+
     return grad
 
 
-def jacobian(y: torch.FloatTensor, x: torch.FloatTensor):
+def jacobian(y: torch.FloatTensor, x: torch.FloatTensor, mode="finite_diff"):
 
     """jacobian of y wrt x
 
@@ -69,11 +88,29 @@ def jacobian(y: torch.FloatTensor, x: torch.FloatTensor):
     Returns:
         jac (torch.FloatTensor): (N, dim_y, dim_x)
     """
+    if mode == "finite_diff":
+        return jacobian_finite_diff(y, x)
+    else:
+        jac = torch.zeros(*y.shape[:-1], y.shape[-1], x.shape[-1]).to(y.device)
+
+        for i in range(y.shape[-1]):
+            y_i = y[..., i]
+            jac[..., i, :] = grad(y_i, x, torch.ones_like(y_i), create_graph=True)[0]
+
+        status = 0
+        if torch.any(torch.isnan(jac)):
+            status = -1
+
+        return jac, status
+
+
+def jacobian_finite_diff(y,x):
+
     jac = torch.zeros(*y.shape[:-1], y.shape[-1], x.shape[-1]).to(y.device)
 
     for i in range(y.shape[-1]):
         y_i = y[..., i]
-        jac[..., i, :] = grad(y_i, x, torch.ones_like(y_i), create_graph=True)[0]
+        jac[..., i, :] = torch.stack(torch.gradient(y_i),dim=-1)
 
     status = 0
     if torch.any(torch.isnan(jac)):
