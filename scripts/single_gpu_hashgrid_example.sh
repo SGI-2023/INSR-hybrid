@@ -1,5 +1,5 @@
 python main.py fluid \
-    --tag sanity_hash_network_again \
+    --tag finite_difference_test \
     --init_cond taylorgreen_multi \
     --num_hidden_layers 0 \
     --hidden_features 64 \
