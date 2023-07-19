@@ -59,6 +59,17 @@ class Config(object):
         with open(os.path.join(self.exp_dir, 'config.json'), 'w') as f:
             json.dump(args.__dict__, f, indent=2)
 
+        self.load_cnfg_tcn_dict_parameter()
+
+    def load_cnfg_tcn_dict_parameter(self):
+        path_tecn_config = self.config_tcn_path
+        if '' == path_tecn_config:
+            self.config_hash_parameters = None
+        else:
+            with open(path_tecn_config) as f:
+                loaded_json_parameters = json.load(f)
+            self.config_hashgrid_param_dict =  loaded_json_parameters['encoding']
+
     def parse(self):
         """initiaize argument parser. Define default hyperparameters and collect from command-line arguments."""
         parent_parser = argparse.ArgumentParser(add_help=False)
@@ -98,6 +109,7 @@ class Config(object):
         group.add_argument('--num_hidden_layers', type=int, default=3)
         group.add_argument('--hidden_features', type=int, default=64)
         group.add_argument('--nonlinearity',type=str, default='sine')
+        group.add_argument('--config_tcn_path', type=str, default='', help="path to the config json file")
 
     def _add_training_config_(self, parser):
         """training configuration"""

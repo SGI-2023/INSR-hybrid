@@ -3,6 +3,7 @@ import torch.nn as nn
 import numpy as np
 import math
 import tinycudann as tcnn
+from .tcnn_nets import HashGridMLP
 
 
 def get_network(cfg, in_features, out_features):
@@ -10,8 +11,8 @@ def get_network(cfg, in_features, out_features):
         return MLP(in_features, out_features, cfg.num_hidden_layers,
             cfg.hidden_features, nonlinearity=cfg.nonlinearity)
     elif cfg.network == 'hashgrid':
-        return TCNSIREN(in_features, out_features, cfg.num_hidden_layers,
-            cfg.hidden_features, nonlinearity=cfg.nonlinearity)
+        return HashGridSIREN(in_features, out_features, cfg.num_hidden_layers,
+            cfg.hidden_features,cfg.config_hashgrid_param_dict, nonlinearity=cfg.nonlinearity)
     elif cfg.network == 'ffn':
         return FFN(in_features, out_features, cfg.num_hidden_layers,
             cfg.hidden_features)
@@ -21,8 +22,8 @@ def get_network(cfg, in_features, out_features):
 
 
 ### hashgrid
-class TCNSIREN(nn.Module):
-    def __init__(self, in_features, out_features, num_hidden_layers, hidden_features,
+class HashGridSIREN(nn.Module):
+    def __init__(self, in_features, out_features, num_hidden_layers, hidden_features,hashgrid_parameters,
                  outermost_linear=True, nonlinearity='relu', weight_init=None):
         super().__init__()
         self.in_features = in_features
@@ -31,16 +32,7 @@ class TCNSIREN(nn.Module):
         self.encoding = tcnn.Encoding(
             in_features,
             dtype=torch.float32,
-            encoding_config={
-                "otype": "Grid",
-                "type": "Hash",
-                "n_levels": 16,
-                "n_features_per_level": 2,
-                "log2_hashmap_size": 19,
-                "base_resolution": 16,
-                "per_level_scale": 1.5,
-                "interpolation": "Linear"
-            },
+            encoding_config=hashgrid_parameters,
         )
 
         self.net = MLP(self.encoding.n_output_dims, out_features, num_hidden_layers,

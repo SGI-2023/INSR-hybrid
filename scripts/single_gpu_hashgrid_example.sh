@@ -1,8 +1,9 @@
 python main.py fluid \
-    --tag finite_difference_test_higher_less_iter_bigger \
+    --tag sanity_test_res_json_hash \
     --init_cond taylorgreen_multi \
-    --num_hidden_layers 3 \
+    --num_hidden_layers 2 \
     --hidden_features 128 \
+    --config_tcn_path configs_hash/config_hash.json \
     --network hashgrid \
     --nonlinearity relu \
     --lr 0.01 \
