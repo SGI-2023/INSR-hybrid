@@ -1,16 +1,15 @@
 python main.py fluid \
-    --tag sanity_test_res_json_hash \
+    --tag many_times_test \
     --init_cond taylorgreen_multi \
-    --num_hidden_layers 2 \
+    --num_hidden_layers 1 \
     --hidden_features 128 \
     --config_tcn_path configs_hash/config_hash.json \
     --network hashgrid \
     --nonlinearity relu \
-    --lr 0.01 \
-    -sr 1024 \
+    -sr 128 \
     -vr 32 \
     --dt 0.05 \
-    -T 0 \
-    --max_n_iters 1000 \
-    --max_n_iters_inic 1000 \
+    --max_n_iters 500 \
+    --max_n_iters_inic 500 \
+    -T 100 \
     -g 0
