@@ -1,15 +1,16 @@
 python main.py fluid \
-    --tag many_times_test \
+    --tag icml_tlgnM_hashgrid_2 \
     --init_cond taylorgreen_multi \
-    --num_hidden_layers 1 \
-    --hidden_features 128 \
+    --num_hidden_layers 0 \
+    --hidden_features 64 \
     --config_tcn_path configs_hash/config_hash.json \
     --network hashgrid \
     --nonlinearity relu \
-    -sr 128 \
+    --network hashgrid \
+    --lr 0.01 \
+    -sr 1024 \
     -vr 32 \
     --dt 0.05 \
-    --max_n_iters 500 \
-    --max_n_iters_inic 500 \
-    -T 100 \
+    -T 0 \
+    --max_n_iters 10000 \
     -g 0
