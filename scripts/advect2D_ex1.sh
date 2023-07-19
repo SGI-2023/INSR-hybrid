@@ -1,0 +1,12 @@
+python main.py advection \
+    --tag advect2D_ex1 \
+    --dim 2 \
+    --init_cond example2 \
+    --num_hidden_layers 3 \
+    --hidden_features 256 \
+    -sr 100 \
+    -vr 100 \
+    --dt 0.05 \
+    -T 10 \
+    --lr 1e-4 \
+    -g 0

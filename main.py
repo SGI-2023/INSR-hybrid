@@ -5,8 +5,10 @@ from config import Config
 cfg = Config("train")
 
 # create model
-if cfg.pde == "advection":
+if cfg.pde == "advection1d":
     from advection import Advection1DModel as neuralModel
+elif cfg.pde == "advection":
+    from advection import AdvectionNDModel as neuralModel
 elif cfg.pde == "fluid":
     from fluid import Fluid2DModel as neuralModel
 elif cfg.pde == "elasticity":

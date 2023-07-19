@@ -116,7 +116,7 @@ class Config(object):
         group = parser.add_argument_group('training')
         group.add_argument('--ckpt', type=str, default=None, required=False, help="desired checkpoint to restore")
         group.add_argument('--vis_frequency', type=int, default=1000, help="visualize output every x iterations")
-        group.add_argument('--max_n_iters', type=int, default=20000, help='number of iterations to train every time step')
+        group.add_argument('-iter', '--max_n_iters', type=int, default=20000, help='number of iterations to train every time step')
         group.add_argument('--max_n_iters_inic', type=int, default=10000, help='number of iterations to train every time step')
         group.add_argument('--lr', type=float, default=1e-4, help='initial learning rate')
         group.add_argument('-sr', '--sample_resolution', type=int, default=128, help='number of samples per iterations')
@@ -143,6 +143,8 @@ class Config(object):
         group = parser.add_argument_group('advection')
         group.add_argument('-L','--length', type=float, default=4.0, help='field length')
         group.add_argument('--vel', type=float, default=0.25, help='constant velocity value')
+        group.add_argument('--dim', type=int, default=1, help='dimension for the advection equation')
+        group.add_argument('--vis_dim', type=int, default=0, help='dimension for the visualization of advection equation')
 
     def _add_fluid_config_(self, parser):
         pass
