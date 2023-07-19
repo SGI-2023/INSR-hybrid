@@ -1,8 +1,8 @@
 python main.py fluid \
-    --tag finite_difference_test \
+    --tag finite_difference_test_higher_less_iter_bigger \
     --init_cond taylorgreen_multi \
-    --num_hidden_layers 0 \
-    --hidden_features 64 \
+    --num_hidden_layers 3 \
+    --hidden_features 128 \
     --network hashgrid \
     --nonlinearity relu \
     --lr 0.01 \
@@ -10,5 +10,6 @@ python main.py fluid \
     -vr 32 \
     --dt 0.05 \
     -T 0 \
-    --max_n_iters 10000 \
+    --max_n_iters 1000 \
+    --max_n_iters_inic 1000 \
     -g 0

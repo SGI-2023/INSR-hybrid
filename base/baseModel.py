@@ -25,6 +25,7 @@ class BaseModel(ABC):
         self.exp_dir = cfg.exp_dir
         self.dt = cfg.dt
         self.max_n_iters = cfg.max_n_iters
+        self.max_n_iters_inic = cfg.max_n_iters_inic
         self.sample_resolution = cfg.sample_resolution
         self.vis_resolution = cfg.vis_resolution
         self.timestep = -1
@@ -127,7 +128,7 @@ class BaseModel(ABC):
         """
         tag = func.__name__
         def loop(self, *args, **kwargs):
-            max_n_iters = 10000 if self.timestep == 0 else self.max_n_iters
+            max_n_iters = self.max_n_iters_inic if self.timestep == 0 else self.max_n_iters
             pbar = tqdm(range(max_n_iters), desc=f"{tag}[{self.timestep}]")
             self._reset_optimizer(max_n_iters)
             min_loss = float("inf")
