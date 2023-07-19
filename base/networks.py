@@ -3,7 +3,6 @@ import torch.nn as nn
 import numpy as np
 import math
 import tinycudann as tcnn
-from .tcnn_nets import HashGridMLP
 
 
 def get_network(cfg, in_features, out_features):
@@ -11,7 +10,7 @@ def get_network(cfg, in_features, out_features):
         return MLP(in_features, out_features, cfg.num_hidden_layers,
             cfg.hidden_features, nonlinearity=cfg.nonlinearity)
     elif cfg.network == 'hashgrid':
-        return HashGridSIREN(in_features, out_features, cfg.num_hidden_layers,
+        return HybridGridMLP(in_features, out_features, cfg.num_hidden_layers,
             cfg.hidden_features,cfg.config_hashgrid_param_dict, nonlinearity=cfg.nonlinearity)
     elif cfg.network == 'ffn':
         return FFN(in_features, out_features, cfg.num_hidden_layers,
@@ -22,7 +21,7 @@ def get_network(cfg, in_features, out_features):
 
 
 ### hashgrid
-class HashGridSIREN(nn.Module):
+class HybridGridMLP(nn.Module):
     def __init__(self, in_features, out_features, num_hidden_layers, hidden_features,hashgrid_parameters,
                  outermost_linear=True, nonlinearity='relu', weight_init=None):
         super().__init__()
