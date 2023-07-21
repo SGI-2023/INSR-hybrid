@@ -58,6 +58,11 @@ def gradient(y, x, grad_outputs=None):
     return grad
 
 
+def finite_difference_gradient(y, x):
+    grad = torch.gradient(y, spacing=[x])[0]
+    return grad
+
+
 def jacobian(y: torch.FloatTensor, x: torch.FloatTensor):
 
     """jacobian of y wrt x
