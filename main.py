@@ -6,7 +6,7 @@ cfg = Config("train")
 
 # create model
 if cfg.pde == "advection":
-    from advection_gradient import Advection1DModel as neuralModel
+    from advection_match_grad import Advection1DModel as neuralModel
 elif cfg.pde == "fluid":
     from fluid import Fluid2DModel as neuralModel
 elif cfg.pde == "elasticity":
@@ -25,5 +25,4 @@ for t in range(cfg.n_timesteps + 1):
         model.initialize()
     else:
         model.step()
-
     model.write_output(output_folder)

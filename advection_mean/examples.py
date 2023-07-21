@@ -2,10 +2,10 @@ import torch
 from functools import partial
 
 
-def get_examples(src, **kwargs):
+def get_examples(src, mu=-1.5, **kwargs):
     # select source function
     if src == 'example1':
-        source_func = partial(gaussian_like, mu=-1.5)
+        source_func = partial(gaussian_like, mu=mu)
     else:
         raise NotImplementedError
     return source_func

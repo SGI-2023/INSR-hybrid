@@ -2,6 +2,7 @@ import os
 import numpy as np
 import torch
 import torch.nn.functional as F
+import torch.nn as nn
 from base import BaseModel, gradient, sample_random, sample_uniform, sample_boundary
 from .examples import get_examples
 from .visualize import draw_signal1D, save_figure
@@ -15,8 +16,10 @@ class Advection1DModel(BaseModel):
         self.vel = cfg.vel
         self.length = cfg.length
 
-        self.field = self._create_network(1, 2)
-        self.field_prev = self._create_network(1, 2)
+        self.alpha = torch.nn.Parameter(torch.tensor(0.5))
+
+        self.field = self._create_network(1, 1)
+        self.field_prev = self._create_network(1, 1)
         self._set_require_grads(self.field_prev, False)
 
     @property
@@ -29,7 +32,7 @@ class Advection1DModel(BaseModel):
     def sample_field(self, resolution, return_samples=False):
         """sample current field with uniform grid points"""
         grid_samples = sample_uniform(resolution, 1, device=self.device) * self.length / 2
-        out = self.field(grid_samples)[:,0].unsqueeze(-1)
+        out = self.field(grid_samples).squeeze(-1)
         if return_samples:
             return out, grid_samples.squeeze(-1)
         
@@ -41,17 +44,37 @@ class Advection1DModel(BaseModel):
         """sample current field with uniform grid points"""
         grid_samples = sample_uniform(resolution, 1, device=self.device) * self.length / 2
         grid_samples.requires_grad_()
-        result = self.field(grid_samples)
-        out_field = result[:,0].unsqueeze(-1)
-        grad_computed_flat = result[:,1]
+        out_field = self.field(grid_samples)
 
-        # grad_computed = gradient(out_field, grid_samples)
+        grad_computed = gradient(out_field, grid_samples)
+        grad_init = grad_computed.clone().squeeze(-1)
 
-        # grad_computed_flat = grad_computed.squeeze(-1)
+        dist = [-0.02, -0.01, 0.01, 0.02]
+        for d in dist:
+            samples_up = torch.clamp(grid_samples + d, min=-2, max=2)
+            curr_u_up = self.field(samples_up)
+            grad_u_up = gradient(curr_u_up, samples_up)
+            grad_computed = torch.cat([grad_computed, grad_u_up], dim=-1)
+        grad_computed_flat = torch.mean(grad_computed, dim=-1)
+        grad_final = grad_computed_flat * self.alpha + grad_init * (1-self.alpha)
+        
+        """
+        samples_distances = torch.cdist(grid_samples, grid_samples, p=2)
+        samples_distances[samples_distances == 0] = 1e-6
+        dist, indices = torch.sort(samples_distances, dim=-1)
+        dist = dist[:,:5]
+        indices = indices[:,:5]
+        gradients_neighbours = grad_computed[indices].squeeze(-1)
+        dist_norm = dist/torch.sum(dist, dim=-1).unsqueeze(-1).repeat(1,dist.shape[-1])
+        dist_flipped = torch.ones(dist_norm.shape).to(dist_norm.device)-dist_norm
+        dist_flipped_norm = dist_flipped/(torch.sum(dist_flipped))
+        w_average_gradients = torch.sum(gradients_neighbours*dist_flipped_norm, dim=-1)
+        grad_computed_flat = w_average_gradients
+        """
+
         grid_samples_flat = grid_samples.squeeze(-1)
 
-        return grad_computed_flat, grid_samples_flat
-
+        return grad_final, grid_samples_flat
 
     @BaseModel._timestepping
     def initialize(self):
@@ -63,17 +86,11 @@ class Advection1DModel(BaseModel):
     def _initialize(self):
         """forward computation for initialization"""
         samples = self._sample_in_training()
-        samples.requires_grad_()
         ref = self.init_cond_func(samples)
-        result = self.field(samples)
-        out = result[:, 0].unsqueeze(-1)
-        grad = result[:, 1].unsqueeze(-1)
-
+        out = self.field(samples)
         loss_random = F.mse_loss(out, ref)
-        loss_grad = F.mse_loss(grad, gradient(ref, samples))
 
         loss_dict = {'main': loss_random}
-        
         return loss_dict
     
     def _vis_initialize(self):
@@ -103,25 +120,47 @@ class Advection1DModel(BaseModel):
         samples = self._sample_in_training()
 
         prev_u = self.field_prev(samples)
-        grad_u0 = prev_u[:, 1].unsqueeze(-1)
-        prev_u = prev_u[:, 0].unsqueeze(-1)
         curr_u = self.field(samples)
-        grad_u = curr_u[:, 1].unsqueeze(-1)
-        curr_u = curr_u[:, 0].unsqueeze(-1)
         dudt = (curr_u - prev_u) / self.dt # (N, sdim)
 
-        loss_grad = F.mse_loss(grad_u, gradient(curr_u, samples))
+        # midpoint time integrator
+        grad_u = gradient(curr_u, samples)
+        grad_u_init = grad_u.clone().squeeze(-1)
+        # upsamples
+        dist = [-0.02, -0.01, 0.01, 0.02]
+        for d in dist:
+            samples_up = torch.clamp(samples + d, min=-2, max=2)
+            curr_u_up = self.field(samples_up)
+            grad_u_up = gradient(curr_u_up, samples_up)
+            grad_u = torch.cat([grad_u, grad_u_up], dim=-1)
+        grad_u_avg = torch.mean(grad_u, dim=-1)
+        grad_final = grad_u_avg * self.alpha + grad_u_init * (1-self.alpha)
+        
+        
 
+        """
+        samples_distances = torch.cdist(samples, samples, p=2)
+        samples_distances[samples_distances == 0] += 1e-6
+        dist, indices = torch.sort(samples_distances, dim=-1)
+        dist = dist[:,:5]
+        indices = indices[:,:5]
+        gradients_neighbours = grad_u[indices].squeeze(-1)
+        dist_norm = dist/torch.sum(dist, dim=-1).unsqueeze(-1).repeat(1,dist.shape[-1])
+        dist_flipped = torch.ones(dist_norm.shape).to(dist_norm.device)-dist_norm
+        dist_flipped_norm = dist_flipped/(torch.sum(dist_flipped))
+        w_average_gradients = torch.sum(gradients_neighbours*dist_flipped_norm, dim=-1)
+        grad_u_averaged = w_average_gradients
+        """
 
-        loss = torch.mean((dudt + self.vel * (grad_u + grad_u0) / 2.) ** 2)
-        # extra_loss = 0.1*loss_grad
+        grad_u0 = gradient(prev_u, samples)
+        loss = torch.mean((dudt + self.vel * (grad_final + grad_u0) / 2.) ** 2)
         loss_dict = {'main': loss}
 
         # Dirichlet boundary constraint
         # FIXME: hard-coded zero boundary condition to sample 1% points near boundary
         #        and fixed factor 1.0 for boundary loss
         boundary_samples = sample_boundary(max(self.sample_resolution // 100, 10), 1, device=self.device) * self.length / 2
-        bound_u = self.field(boundary_samples)[:, 0].unsqueeze(-1)
+        bound_u = self.field(boundary_samples)
         bc_loss = torch.mean(bound_u ** 2) * 1.
         loss_dict.update({'bc': bc_loss})
 
@@ -151,8 +190,10 @@ class Advection1DModel(BaseModel):
     def write_output(self, output_folder):
         values, samples = self.sample_field(self.vis_resolution, return_samples=True)
         values = values.detach().cpu().numpy()
+        ref = get_examples(self.cfg.init_cond, mu=self.t*self.vel)(samples)
         samples = samples.detach().cpu().numpy()
-        fig = draw_signal1D(samples, values, y_max=1.0)
+        ref = ref.detach().cpu().numpy()
+        fig = draw_signal1D(samples, values, y_gt=ref, y_max=1.0)
 
         save_path = os.path.join(output_folder, f"t{self.timestep:03d}_values.png")
         save_figure(fig, save_path)
@@ -165,6 +206,14 @@ class Advection1DModel(BaseModel):
         grad_u_detach = grad_u.detach().cpu().numpy()
         samples = samples.detach().cpu().numpy()
         fig_grad = draw_signal1D(samples, grad_u_detach)
+
+        save_path = os.path.join(output_folder, f"t{self.timestep:03d}_grad_nolimit.png")
+        save_figure(fig_grad, save_path)
+
+        save_path = os.path.join(output_folder, f"t{self.timestep:03d}_grad_nolimit.npz")
+        np.savez(save_path, grad_u_detach)
+
+        fig_grad = draw_signal1D(samples, grad_u_detach, y_max=1.0)
 
         save_path = os.path.join(output_folder, f"t{self.timestep:03d}_grad.png")
         save_figure(fig_grad, save_path)

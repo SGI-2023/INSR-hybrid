@@ -2,6 +2,7 @@ import os
 import numpy as np
 import torch
 import torch.nn.functional as F
+import torch.nn as nn
 from base import BaseModel, gradient, sample_random, sample_uniform, sample_boundary
 from .examples import get_examples
 from .visualize import draw_signal1D, save_figure
@@ -112,6 +113,15 @@ class Advection1DModel(BaseModel):
         bc_loss = torch.mean(bound_u ** 2) * 1.
         loss_dict.update({'bc': bc_loss})
 
+        values, samples = self.sample_field(self.vis_resolution, return_samples=True)
+        values = values.detach().cpu()
+        ref = get_examples(self.cfg.init_cond, mu=-1.5 + self.dt*self.t*self.vel)(samples)
+        ref = ref.detach().cpu()
+
+        mae = nn.L1Loss()
+        true_error = mae(values, ref)
+        loss_dict.update({'true_error': true_error})
+
 
 
         return loss_dict
@@ -131,15 +141,15 @@ class Advection1DModel(BaseModel):
         samples = samples.detach().cpu().numpy()
         fig = draw_signal1D(samples, values, y_max=10.0)
         self.tb.add_figure("field", fig, global_step=self.train_step)
-        
-
 
 
     def write_output(self, output_folder):
         values, samples = self.sample_field(self.vis_resolution, return_samples=True)
         values = values.detach().cpu().numpy()
+        ref = get_examples(self.cfg.init_cond, mu=-1.5 + self.dt*self.t*self.vel)(samples)
         samples = samples.detach().cpu().numpy()
-        fig = draw_signal1D(samples, values, y_max=1.0)
+        ref = ref.detach().cpu().numpy()
+        fig = draw_signal1D(samples, values, y_gt=ref, y_max=1.0)
 
         save_path = os.path.join(output_folder, f"t{self.timestep:03d}_values.png")
         save_figure(fig, save_path)
@@ -158,3 +168,13 @@ class Advection1DModel(BaseModel):
 
         save_path = os.path.join(output_folder, f"t{self.timestep:03d}_grad.npz")
         np.savez(save_path, grad_u_detach)
+
+        fig_grad = draw_signal1D(samples, grad_u_detach)
+
+        save_path = os.path.join(output_folder, f"t{self.timestep:03d}_grad_nolimit.png")
+        save_figure(fig_grad, save_path)
+
+        save_path = os.path.join(output_folder, f"t{self.timestep:03d}_grad_nolimit.npz")
+        np.savez(save_path, grad_u_detach)
+
+        

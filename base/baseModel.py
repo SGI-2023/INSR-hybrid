@@ -72,6 +72,8 @@ class BaseModel(ABC):
 
     def _update_network(self, loss_dict):
         """update network by back propagation"""
+        if 'true_loss' in loss_dict.keys():
+            del loss_dict['true_loss']
         loss = sum(loss_dict.values())
         self.optimizer.zero_grad()
         loss.backward()
@@ -111,6 +113,7 @@ class BaseModel(ABC):
             self.train_step = 0
             for i in pbar:
                 # one gradient descent step
+                self.t = i
                 loss_dict = func(self, *args, **kwargs)
                 self._update_network(loss_dict)
                 self.train_step += 1
@@ -131,7 +134,8 @@ class BaseModel(ABC):
                 else:
                     accum_steps += 1
 
-                if self.cfg.early_stop and self.optimizer.param_groups[0]['lr'] <= self.min_lr:
+                if (self.cfg.early_stop and self.optimizer.param_groups[0]['lr'] <= self.min_lr) or \
+                    self.cfg.early_stop_accum_step <= accum_steps:
                     tqdm.write(f"early stopping at iteration {i}")
                     break
         return loop
