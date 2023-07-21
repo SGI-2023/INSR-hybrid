@@ -35,6 +35,8 @@ class Advection1DModel(BaseModel):
             return out, grid_samples.squeeze(-1)
         
 
+        
+
         return out
     
     def sample_field_gradient(self, resolution):
@@ -113,6 +115,7 @@ class Advection1DModel(BaseModel):
         bc_loss = torch.mean(bound_u ** 2) * 1.
         loss_dict.update({'bc': bc_loss})
 
+<<<<<<< HEAD
         values, samples = self.sample_field(self.vis_resolution, return_samples=True)
         values = values.detach().cpu()
         ref = get_examples(self.cfg.init_cond, mu=-1.5 + self.dt*self.t*self.vel)(samples)
@@ -122,6 +125,8 @@ class Advection1DModel(BaseModel):
         true_error = mae(values, ref)
         loss_dict.update({'true_error': true_error})
 
+=======
+>>>>>>> bdeb49ab0970109d3d3d5f53ce249621d9f4b17f
 
 
         return loss_dict
@@ -141,6 +146,9 @@ class Advection1DModel(BaseModel):
         samples = samples.detach().cpu().numpy()
         fig = draw_signal1D(samples, values, y_max=10.0)
         self.tb.add_figure("field", fig, global_step=self.train_step)
+        
+
+
 
 
     def write_output(self, output_folder):
@@ -168,6 +176,7 @@ class Advection1DModel(BaseModel):
 
         save_path = os.path.join(output_folder, f"t{self.timestep:03d}_grad.npz")
         np.savez(save_path, grad_u_detach)
+<<<<<<< HEAD
 
         fig_grad = draw_signal1D(samples, grad_u_detach)
 
@@ -178,3 +187,5 @@ class Advection1DModel(BaseModel):
         np.savez(save_path, grad_u_detach)
 
         
+=======
+>>>>>>> bdeb49ab0970109d3d3d5f53ce249621d9f4b17f
