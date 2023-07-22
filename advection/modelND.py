@@ -4,7 +4,7 @@ import torch
 import torch.nn.functional as F
 from base import BaseModel, gradient, sample_random, sample_uniform, sample_boundary
 from .examples import get_examples
-from .visualize import scatter_signal1D, save_figure, scatter_signal2D
+from .visualize import scatter_signal1D, save_figure, scatter_signal2D, scatter_compare2D, draw_signal1D
 
 
 class AdvectionNDModel(BaseModel):
@@ -45,7 +45,7 @@ class AdvectionNDModel(BaseModel):
                 grid_samples = sample_uniform(resolution, self.dim, device=self.device) * self.length / 2
             else:
                 grid_samples = sample_random(self.sample_resolution ** self.dim, self.dim, device=self.device) * self.length / 2
-            
+
         if to_squeeze:
             out = self.field(grid_samples).squeeze(-1)
         else:
@@ -56,6 +56,28 @@ class AdvectionNDModel(BaseModel):
             else:
                 return out, grid_samples
         return out
+    
+    def sample_field_gradient(self, resolution, is_uniform = True, use_preset = False):
+        """sample current field gradient with uniform grid points"""
+        if use_preset:
+            grid_samples = self.vis_samples
+        else:
+            if self.dim > 3:
+                is_uniform = False
+            if is_uniform:
+                grid_samples = sample_uniform(resolution, self.dim, device=self.device) * self.length / 2
+            else:
+                grid_samples = sample_random(self.sample_resolution ** self.dim, self.dim, device=self.device) * self.length / 2
+        
+        grid_samples.requires_grad_()
+        out = self.field(grid_samples)
+        grad_computed = gradient(out, grid_samples)
+
+        grad_computed_flat = grad_computed.squeeze(-1)
+        grid_samples_flat = grid_samples.squeeze(-1)
+
+        return grad_computed_flat, grid_samples_flat
+
 
     @BaseModel._timestepping
     def initialize(self):
@@ -197,4 +219,25 @@ class AdvectionNDModel(BaseModel):
         save_path = os.path.join(output_folder, f"t{self.timestep:03d}_gt.png")
         save_figure(fig, save_path)
 
+        if self.vis_dim == 2:
+            fig = scatter_compare2D(samples, values, values_gt, values_error)
+            save_path = os.path.join(output_folder, f"c{self.timestep:03d}.png")
+            save_figure(fig, save_path)
+
+        # Plot scatter gradients
+        #print(samples.shape)
+        #print(values.shape)
+        grad_u, samples = self.sample_field_gradient(self.vis_resolution)
+        grad_u_detach = grad_u.detach().cpu().numpy()
+        samples = samples.detach().cpu().numpy()
+        print(grad_u_detach.shape)
+        print(samples.shape)
+        grad_norm = np.linalg.norm(grad_u_detach, axis=-1)
+        print(grad_norm.shape)
+        fig_grad = scatter_signal2D(samples, color=grad_norm)
+        save_path = os.path.join(output_folder, f"g{self.timestep:03d}.png")
+        save_figure(fig_grad, save_path)
+
+        save_path = os.path.join(output_folder, f"gradmag_{self.timestep:03d}.npy")
+        np.savez(save_path, grad_norm)
         

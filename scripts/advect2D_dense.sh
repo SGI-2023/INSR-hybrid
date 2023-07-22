@@ -1,0 +1,17 @@
+python main.py advection \
+    --tag advect2D_dense_1 \
+    --dim 2 \
+    --init_cond example2 \
+    --num_hidden_layers 0 \
+    --hidden_features 64 \
+    --config_tcn_path configs_hash/config_dense.json \
+    --network hashgrid \
+    --nonlinearity relu \
+    --max_n_iters 10000 \
+    --max_n_iters_inic 10000 \
+    -sr 100 \
+    -vr 100 \
+    --dt 0.05 \
+    -T 0 \
+    --lr 1e-3 \
+    -g 0

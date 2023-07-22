@@ -1,0 +1,17 @@
+python main.py advection \
+    --tag advect2D_grid_2 \
+    --dim 2 \
+    --init_cond example2 \
+    --num_hidden_layers 3 \
+    --hidden_features 256 \
+    --config_tcn_path configs_hash/config_hash.json \
+    --network hashgrid \
+    --nonlinearity relu \
+    --max_n_iters 10000 \
+    --max_n_iters_inic 10000 \
+    -sr 100 \
+    -vr 100 \
+    --dt 0.05 \
+    -T 0 \
+    --lr 1e-4 \
+    -g 0

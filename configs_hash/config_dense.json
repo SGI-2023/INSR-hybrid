@@ -1,10 +1,10 @@
 {
 	"encoding": {
 		"otype": "Grid",
-		"type": "Hash",
+		"type": "Dense",
 		"n_levels": 1,
 		"n_features_per_level": 2,
-		"base_resolution": 128,
+		"base_resolution": 512,
 		"per_level_scale": 1,
 		"interpolation": "Linear"
 	}
