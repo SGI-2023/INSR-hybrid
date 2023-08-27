@@ -22,7 +22,7 @@ class MLPPositional(nn.Module):
             self.positional_encoding_vector = self.create_vector_for_positional_encoding(num_positional_encoding)
         
         self.net = MLP(num_positional_encoding, out_features, cfg.num_hidden_layers,
-            cfg.hidden_features, nonlinearity=cfg.nonlinearity)
+            cfg.hidden_features)
         
 
     def create_vector_for_positional_encoding(self, num_positional_encoding):
