@@ -94,7 +94,7 @@ class Config(object):
     def _add_network_config_(self, parser):
         """add hyperparameters for network architecture"""
         group = parser.add_argument_group('network')
-        group.add_argument('--network', type=str, default='siren', choices=['siren', 'grid'])
+        group.add_argument('--network', type=str, default='siren', choices=['siren', 'grid', 'positional'])
         group.add_argument('--num_hidden_layers', type=int, default=3)
         group.add_argument('--hidden_features', type=int, default=64)
         group.add_argument('--nonlinearity',type=str, default='sine')

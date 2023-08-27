@@ -1,15 +1,47 @@
 import torch
 import torch.nn as nn
 import numpy as np
-
+from positional_encodings.torch_encodings import PositionalEncoding1D, PositionalEncoding2D, PositionalEncoding3D, Summer
 
 def get_network(cfg, in_features, out_features):
     if cfg.network == 'siren':
         return MLP(in_features, out_features, cfg.num_hidden_layers,
             cfg.hidden_features, nonlinearity=cfg.nonlinearity)
+    elif cfg.network == 'positional':
+        return MLPPositional(in_features, out_features, cfg)
     else:
         raise NotImplementedError
+    
 
+class MLPPositional(nn.Module):
+    def __init__(self, in_features, out_features, cfg, num_positional_encoding = 10):
+        super().__init__()
+        
+        if in_features == 1:
+            print("passei")
+            self.positional_encoding_vector = self.create_vector_for_positional_encoding(num_positional_encoding)
+        
+        self.net = MLP(num_positional_encoding, out_features, cfg.num_hidden_layers,
+            cfg.hidden_features, nonlinearity=cfg.nonlinearity)
+        
+
+    def create_vector_for_positional_encoding(self, num_positional_encoding):
+        vector_of_frequencies = torch.pi*2**torch.arange(num_positional_encoding,device=torch.device("cuda:0"))
+        unsqueezed_vector_of_frequencies = vector_of_frequencies.unsqueeze(0)
+
+        return unsqueezed_vector_of_frequencies
+    
+    def apply_positional_encoding(self, coords):
+        encoded_coords = coords*self.positional_encoding_vector         
+        return encoded_coords
+
+    def forward(self, coords, weights=None):
+
+        encoded_coords = self.apply_positional_encoding(coords)
+        output = self.net(encoded_coords)
+        if weights is not None:
+            output = output * weights
+        return output
 
 ############################### SIREN ################################
 class Sine(nn.Module):
