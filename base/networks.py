@@ -17,9 +17,8 @@ class MLPPositional(nn.Module):
     def __init__(self, in_features, out_features, cfg, num_positional_encoding = 10):
         super().__init__()
         
-        if in_features == 1:
-            print("passei")
-            self.positional_encoding_vector = self.create_vector_for_positional_encoding(num_positional_encoding)
+        print("oi")
+        self.positional_encoding_vector = self.create_vector_for_positional_encoding(num_positional_encoding)
         
         self.net = MLP(num_positional_encoding, out_features, cfg.num_hidden_layers,
             cfg.hidden_features)

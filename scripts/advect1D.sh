@@ -1,11 +1,12 @@
 python main.py advection \
-    --tag advect1D_ex1_siren_network_positional \
+    --tag advect1D_ex1_siren_network_positional_bigger_increased_size_debug_ \
     --init_cond example1 \
-    --num_hidden_layers 2 \
-    --hidden_features 20 \
+    --num_hidden_layers 5 \
+    --hidden_features 64 \
     --early_stop_accum_step 2000 \
     --network positional \
     -sr 5000 \
     --dt 0.05 \
-    -T 50 \
+    -T 25 \
+    --lr 1e-6\
     -g 0 \
