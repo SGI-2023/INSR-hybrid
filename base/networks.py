@@ -13,30 +13,63 @@ def get_network(cfg, in_features, out_features):
         raise NotImplementedError
     
 
-class MLPPositional(nn.Module):
-    def __init__(self, in_features, out_features, cfg, num_positional_encoding = 10):
+
+class HarmonicEmbedding(torch.nn.Module):
+    def __init__(self, n_harmonic_functions=60, omega0=1):
+        """
+        Given an input tensor `x` of shape [minibatch, ... , dim],
+        the harmonic embedding layer converts each feature
+        in `x` into a series of harmonic features `embedding`
+        as follows:
+            embedding[..., i*dim:(i+1)*dim] = [
+                sin(x[..., i]),
+                sin(2*x[..., i]),
+                sin(4*x[..., i]),
+                ...
+                sin(2**(self.n_harmonic_functions-1) * x[..., i]),
+                cos(x[..., i]),
+                cos(2*x[..., i]),
+                cos(4*x[..., i]),
+                ...
+                cos(2**(self.n_harmonic_functions-1) * x[..., i])
+            ]
+            
+        Note that `x` is also premultiplied by `omega0` before
+        evaluating the harmonic functions.
+        """
         super().__init__()
-        
-        print("oi")
-        self.positional_encoding_vector = self.create_vector_for_positional_encoding(num_positional_encoding)
-        
-        self.net = MLP(num_positional_encoding, out_features, cfg.num_hidden_layers,
-            cfg.hidden_features)
-        
-
-    def create_vector_for_positional_encoding(self, num_positional_encoding):
-        vector_of_frequencies = torch.pi*2**torch.arange(num_positional_encoding,device=torch.device("cuda:0"))
-        unsqueezed_vector_of_frequencies = vector_of_frequencies.unsqueeze(0)
-
-        return unsqueezed_vector_of_frequencies
+        self.register_buffer(
+            'frequencies',
+            omega0 * (2.0 ** torch.arange(n_harmonic_functions)),
+        )
+    def forward(self, x):
+        """
+        Args:
+            x: tensor of shape [..., dim]
+        Returns:
+            embedding: a harmonic embedding of `x`
+                of shape [..., n_harmonic_functions * dim * 2]
+        """
+        embed = (x[..., None] * self.frequencies).view(*x.shape[:-1], -1)
+        return torch.cat((embed.sin(), embed.cos()), dim=-1)
     
-    def apply_positional_encoding(self, coords):
-        encoded_coords = coords*self.positional_encoding_vector         
-        return encoded_coords
+
+class MLPPositional(nn.Module):
+    def __init__(self, in_features, out_features, cfg):
+        super().__init__()
+
+        num_positional_encoding = cfg.n_harmonic_functions
+        
+        self.positional_encoding_layer = HarmonicEmbedding(n_harmonic_functions=num_positional_encoding, omega0 = cfg.omega0)
+
+        n_embeding_dims = num_positional_encoding * 2 * 1
+        
+        self.net = MLP(n_embeding_dims, out_features, cfg.num_hidden_layers,
+            cfg.hidden_features)
 
     def forward(self, coords, weights=None):
 
-        encoded_coords = self.apply_positional_encoding(coords)
+        encoded_coords = self.positional_encoding_layer(coords)
         output = self.net(encoded_coords)
         if weights is not None:
             output = output * weights
