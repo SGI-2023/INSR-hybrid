@@ -98,7 +98,7 @@ class Config(object):
         group.add_argument('--num_hidden_layers', type=int, default=3)
         group.add_argument('--hidden_features', type=int, default=64)
         group.add_argument('--nonlinearity',type=str, default='sine')
-        group.add_argument('--omega0', type=float, default=.1, help = "Parameter to tune the omega0 for harmonic embedding")
+        group.add_argument('--omega_0', type=float, default=.1, help = "Parameter to tune the omega0 for harmonic embedding")
         group.add_argument('--n_harmonic_functions',type=int, default=10, help = "Parameter to tune the number of harmonics")
 
     def _add_training_config_(self, parser):

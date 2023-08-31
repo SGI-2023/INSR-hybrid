@@ -6,7 +6,7 @@ from positional_encodings.torch_encodings import PositionalEncoding1D, Positiona
 def get_network(cfg, in_features, out_features):
     if cfg.network == 'siren':
         return MLP(in_features, out_features, cfg.num_hidden_layers,
-            cfg.hidden_features, nonlinearity=cfg.nonlinearity)
+            cfg.hidden_features,omega_0=cfg.omega_0, nonlinearity=cfg.nonlinearity)
     elif cfg.network == 'positional':
         return MLPPositional(in_features, out_features, cfg)
     else:
@@ -15,7 +15,7 @@ def get_network(cfg, in_features, out_features):
 
 
 class HarmonicEmbedding(torch.nn.Module):
-    def __init__(self, n_harmonic_functions=60, omega0=1):
+    def __init__(self, n_harmonic_functions=60, omega_0=1):
         """
         Given an input tensor `x` of shape [minibatch, ... , dim],
         the harmonic embedding layer converts each feature
@@ -34,13 +34,13 @@ class HarmonicEmbedding(torch.nn.Module):
                 cos(2**(self.n_harmonic_functions-1) * x[..., i])
             ]
             
-        Note that `x` is also premultiplied by `omega0` before
+        Note that `x` is also premultiplied by `omega_0` before
         evaluating the harmonic functions.
         """
         super().__init__()
         self.register_buffer(
             'frequencies',
-            omega0 * (2.0 ** torch.arange(n_harmonic_functions)),
+            omega_0 * (2.0 ** torch.arange(n_harmonic_functions)),
         )
     def forward(self, x):
         """
@@ -60,7 +60,7 @@ class MLPPositional(nn.Module):
 
         num_positional_encoding = cfg.n_harmonic_functions
         
-        self.positional_encoding_layer = HarmonicEmbedding(n_harmonic_functions=num_positional_encoding, omega0 = cfg.omega0)
+        self.positional_encoding_layer = HarmonicEmbedding(n_harmonic_functions=num_positional_encoding, omega_0 = cfg.omega_0)
 
         n_embeding_dims = num_positional_encoding * 2 * 1
         
@@ -77,24 +77,26 @@ class MLPPositional(nn.Module):
 
 ############################### SIREN ################################
 class Sine(nn.Module):
-    def __init(self):
+    def __init__(self, omega_0):
         super().__init__()
+        self.omega_0 = omega_0
 
     def forward(self, input):
         # See paper sec. 3.2, final paragraph, and supplement Sec. 1.5 for discussion of factor 30
-        return torch.sin(30 * input)
+        return torch.sin(self.omega_0 * input)
 
 
 class MLP(nn.Module):
-    def __init__(self, in_features, out_features, num_hidden_layers, hidden_features,
+    def __init__(self, in_features, out_features, num_hidden_layers, hidden_features,omega_0 = None,
                  outermost_linear=True, nonlinearity='relu', weight_init=None):
         super().__init__()
 
         self.first_layer_init = None
+        self.omega_0 = omega_0
 
         # Dictionary that maps nonlinearity name to the respective function, initialization, and, if applicable,
         # special first-layer initialization scheme
-        nls_and_inits = {'sine':(Sine(), sine_init, first_layer_sine_init),
+        nls_and_inits = {'sine':(Sine(self.omega_0), lambda m: sine_init(m,self.omega_0), first_layer_sine_init),
                          'relu':(nn.ReLU(inplace=True), init_weights_normal, None),
                          'elu':(nn.ELU(inplace=True), init_weights_elu, None)}
 
@@ -135,12 +137,12 @@ def init_weights_normal(m):
             nn.init.kaiming_normal_(m.weight, a=0.0, nonlinearity='relu', mode='fan_in')
 
 
-def sine_init(m):
+def sine_init(m, omega_0):
     with torch.no_grad():
         if hasattr(m, 'weight'):
             num_input = m.weight.size(-1)
             # See supplement Sec. 1.5 for discussion of factor 30
-            m.weight.uniform_(-np.sqrt(6 / num_input) / 30, np.sqrt(6 / num_input) / 30)
+            m.weight.uniform_(-np.sqrt(6 / num_input) / omega_0, np.sqrt(6 / num_input) / omega_0)
 
 
 def first_layer_sine_init(m):
