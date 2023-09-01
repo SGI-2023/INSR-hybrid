@@ -13,10 +13,9 @@ do
                         --init_cond example1 \
                         --num_hidden_layers ${i_hidden_layers} \
                         --hidden_features ${i_n_width} \
-                        --early_stop_accum_step 20400 \
                         --network positional \
                         -sr 5000 \
-                        --n_harmonic_functions ${N_harmonics}
+                        --n_harmonic_functions ${N_harmonics} \
                         --max_n_iters 20000 \
                         --dt 0.05 \
                         -T 0 \
