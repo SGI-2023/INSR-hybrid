@@ -1,4 +1,4 @@
-for i_omega0 in 0.1 5 15 30 40 60 80
+for i_omega0 in 0.1 5 30 40 60
 do
     for i_n_width in 16 32 64 128
     do 
@@ -14,7 +14,7 @@ do
                     --early_stop_accum_step 20400 \
                     --network siren \
                     -sr 5000 \
-                    --max_n_iters 10000 \
+                    --max_n_iters 20000 \
                     --dt 0.05 \
                     -T 0 \
                     --lr ${i_learning_rate}\
