@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from positional_encodings.torch_encodings import PositionalEncoding1D, PositionalEncoding2D, PositionalEncoding3D, Summer
 
 def get_network(cfg, in_features, out_features):
     if cfg.network == 'siren':
@@ -62,7 +61,7 @@ class MLPPositional(nn.Module):
         
         self.positional_encoding_layer = HarmonicEmbedding(n_harmonic_functions=num_positional_encoding, omega_0 = cfg.omega_0)
 
-        n_embeding_dims = num_positional_encoding * 2 * 1
+        n_embeding_dims = num_positional_encoding * 2 * in_features
         
         self.net = MLP(n_embeding_dims, out_features, cfg.num_hidden_layers,
             cfg.hidden_features)

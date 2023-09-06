@@ -4,7 +4,7 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 from base import BaseModel, gradient, sample_random, sample_uniform, sample_boundary
-from .examples import get_examples
+from .examples import get_examples, gaussian_gradient
 from .visualize import draw_signal1D, save_figure
 
 
@@ -115,7 +115,6 @@ class Advection1DModel(BaseModel):
         bc_loss = torch.mean(bound_u ** 2) * 1.
         loss_dict.update({'bc': bc_loss})
 
-<<<<<<< HEAD
         values, samples = self.sample_field(self.vis_resolution, return_samples=True)
         values = values.detach().cpu()
         ref = get_examples(self.cfg.init_cond, mu=-1.5 + self.dt*self.t*self.vel)(samples)
@@ -125,11 +124,15 @@ class Advection1DModel(BaseModel):
         true_error = mae(values, ref)
         loss_dict.update({'true_error': true_error})
 
-=======
->>>>>>> bdeb49ab0970109d3d3d5f53ce249621d9f4b17f
 
 
         return loss_dict
+    
+    def _compute_groundtruth(self, samples):
+        '''compute the groundtruth using method of characteristics'''
+        t = self.timestep * self.dt
+        values_gt = self.init_cond_func(self.vis_samples - t * self.vel)
+        return values_gt
 
     def _vis_advect(self):
         """visualization on tb during training"""
@@ -153,9 +156,18 @@ class Advection1DModel(BaseModel):
 
     def write_output(self, output_folder):
         values, samples = self.sample_field(self.vis_resolution, return_samples=True)
+        
         values = values.detach().cpu().numpy()
-        ref = get_examples(self.cfg.init_cond, mu=-1.5 + self.dt*self.t*self.vel)(samples)
+        ref = get_examples(self.cfg.init_cond, mu=-1.5 + self.dt*self.timestep*self.vel)(samples)
+        
+        print("dt:", self.dt)
+        print("timestep:", self.timestep)
+        print("vel:", self.vel)
+        print(-1.5 + self.dt*self.timestep*self.vel)
+        grad_ref = gaussian_gradient(samples, mu=-1.5 + self.dt*self.timestep*self.vel).detach().cpu().numpy()
+
         samples = samples.detach().cpu().numpy()
+        print("samples min and max: ", np.min(samples), np.max(samples))
         ref = ref.detach().cpu().numpy()
         fig = draw_signal1D(samples, values, y_gt=ref, y_max=1.0)
 
@@ -164,7 +176,6 @@ class Advection1DModel(BaseModel):
 
         save_path = os.path.join(output_folder, f"t{self.timestep:03d}.npz")
         np.savez(save_path, values)
-
 
         grad_u, samples = self.sample_field_gradient(self.vis_resolution)
         grad_u_detach = grad_u.detach().cpu().numpy()
@@ -176,16 +187,27 @@ class Advection1DModel(BaseModel):
 
         save_path = os.path.join(output_folder, f"t{self.timestep:03d}_grad.npz")
         np.savez(save_path, grad_u_detach)
-<<<<<<< HEAD
 
         fig_grad = draw_signal1D(samples, grad_u_detach)
-
         save_path = os.path.join(output_folder, f"t{self.timestep:03d}_grad_nolimit.png")
         save_figure(fig_grad, save_path)
 
         save_path = os.path.join(output_folder, f"t{self.timestep:03d}_grad_nolimit.npz")
         np.savez(save_path, grad_u_detach)
 
+        print("min and max: ", np.min(grad_ref), np.max(grad_ref))
+        fig_grad = draw_signal1D(samples, grad_ref, y_max=1.0)
+        print("min and max: ", np.min(grad_ref), np.max(grad_ref))
+        save_path = os.path.join(output_folder, f"t{self.timestep:03d}_grad_ref.png")
+        save_figure(fig_grad, save_path)
+
+        fig_grad = draw_signal1D(samples, grad_ref)
+        save_path = os.path.join(output_folder, f"t{self.timestep:03d}_grad_ref_nolimit.png")
+        save_figure(fig_grad, save_path)
+
+        grad_loss = np.mean(np.abs(grad_u_detach - grad_ref))
+        print("Grad Loss: ", grad_loss)
+        save_path = os.path.join(output_folder, f"t{self.timestep:03d}_loss.txt")
+        with open(save_path, "w") as f:
+            f.write(str(grad_loss))
         
-=======
->>>>>>> bdeb49ab0970109d3d3d5f53ce249621d9f4b17f
