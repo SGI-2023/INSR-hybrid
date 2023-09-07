@@ -1,12 +1,12 @@
 for N_harmonics in 1 3 9 27
 do
-    for i_omega0 in 0.1 5 30 40 60
+    for i_omega0 in 5 30  60
     do
-        for i_n_width in 16 32 64 128
+        for i_n_width in  64 128 256
         do 
-            for i_hidden_layers in 2 3 4 5
+            for i_hidden_layers in 2 3 5 6
             do
-                for i_learning_rate in 0.00001 0.00003 0.0001 0.0003 0.001
+                for i_learning_rate in 0.00001 0.0001 0.001
                 do
                     python main.py advection \
                         --tag advect1D_positional_harmonics_${N_harmonics}_omega0_${i_omega0}_width_${i_n_width}_hidden_${i_hidden_layers}_lr_${i_learning_rate}\

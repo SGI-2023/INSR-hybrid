@@ -1,10 +1,10 @@
-for i_omega0 in 0.1 5 30 40 60
+for i_omega0 in 5 30 
 do
-    for i_n_width in 16 32 64 128
+    for i_n_width in  128 256
     do 
-        for i_hidden_layers in 2 3 4 5
+        for i_hidden_layers in   5 6
         do
-            for i_learning_rate in 0.00001 0.00003 0.0001 0.0003 0.001
+            for i_learning_rate in 0.00001 0.0001 0.001
             do
                 python main.py advection \
                     --tag advect1D_siren_omega0_${i_omega0}_width_${i_n_width}_hidden_${i_hidden_layers}_lr_${i_learning_rate}\
@@ -15,7 +15,7 @@ do
                     -sr 5000 \
                     --max_n_iters 20000 \
                     --dt 0.05 \
-                    -T 0 \
+                    -T 25 \
                     --lr ${i_learning_rate}\
                     -g 0 \
                     --omega_0 ${i_omega0} 
