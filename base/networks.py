@@ -50,7 +50,7 @@ class HarmonicEmbedding(torch.nn.Module):
                 of shape [..., n_harmonic_functions * dim * 2]
         """
         embed = (x[..., None] * self.frequencies).view(*x.shape[:-1], -1)
-        return torch.cat((embed.sin(), embed.cos()), dim=-1)
+        return torch.cat((embed.sin(), embed.cos(),x ), dim=-1)
     
 
 class MLPPositional(nn.Module):
@@ -61,10 +61,10 @@ class MLPPositional(nn.Module):
         
         self.positional_encoding_layer = HarmonicEmbedding(n_harmonic_functions=num_positional_encoding, omega_0 = cfg.omega_0)
 
-        n_embeding_dims = num_positional_encoding * 2 * in_features
+        n_embeding_dims = num_positional_encoding * 2 * in_features + in_features 
         
         self.net = MLP(n_embeding_dims, out_features, cfg.num_hidden_layers,
-            cfg.hidden_features)
+            cfg.hidden_features, nonlinearity=cfg.nonlinearity)
 
     def forward(self, coords, weights=None):
 
@@ -97,7 +97,8 @@ class MLP(nn.Module):
         # special first-layer initialization scheme
         nls_and_inits = {'sine':(Sine(self.omega_0), lambda m: sine_init(m,self.omega_0), first_layer_sine_init),
                          'relu':(nn.ReLU(inplace=True), init_weights_normal, None),
-                         'elu':(nn.ELU(inplace=True), init_weights_elu, None)}
+                         'elu':(nn.ELU(inplace=True), init_weights_elu, None),
+                        'softplus':(torch.nn.Softplus(beta=10.0), init_weights_normal, None)}
 
         nl, nl_weight_init, first_layer_init = nls_and_inits[nonlinearity]
 

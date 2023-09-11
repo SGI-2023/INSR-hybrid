@@ -4,7 +4,7 @@ do
     do 
         for i_hidden_layers in   5 6
         do
-            for i_learning_rate in 0.00001 0.0001 0.001
+            for i_learning_rate in 0.00001 0.0001
             do
                 python main.py advection \
                     --tag advect1D_siren_omega0_${i_omega0}_width_${i_n_width}_hidden_${i_hidden_layers}_lr_${i_learning_rate}\
