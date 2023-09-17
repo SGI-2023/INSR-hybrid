@@ -100,6 +100,7 @@ class Config(object):
         group.add_argument('--nonlinearity',type=str, default='sine')
         group.add_argument('--omega_0', type=float, default=.1, help = "Parameter to tune the omega0 for harmonic embedding")
         group.add_argument('--n_harmonic_functions',type=int, default=10, help = "Parameter to tune the number of harmonics")
+        group.add_argument('--rel_w',type=float, default=10, help = "Relative weight of grad/main loss")
 
     def _add_training_config_(self, parser):
         """training configuration"""

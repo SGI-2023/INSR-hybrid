@@ -10,6 +10,13 @@ def get_examples(src, mu=-1.5, **kwargs):
         raise NotImplementedError
     return source_func
 
+def get_examples_grad(src, mu=-1.5, **kwargs):
+    # select source function
+    if src == 'example1':
+        source_func = partial(gaussian_gradient, mu=mu)
+    else:
+        raise NotImplementedError
+    return source_func
 
 def gaussian_like(x, mu=0, sigma=0.1):
     """normalized gaussian distribution"""
