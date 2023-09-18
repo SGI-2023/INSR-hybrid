@@ -39,12 +39,12 @@ class BaseModel(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def initialize(self):
+    def initialize(self, grad_model=None):
         """fit network to initial condition (timestep = 0). NOTE: warp with _timestepping."""
         raise NotImplementedError
 
     @abstractmethod
-    def step(self):
+    def step(self, grad_model=None):
         """step the system by one time step (timestep >= 1). NOTE: warp with _timestepping."""
         raise NotImplementedError
     
@@ -89,11 +89,11 @@ class BaseModel(ABC):
             p.requires_grad_(require_grad)
     
     @classmethod
-    def _timestepping(cls, func):
-        def warp(self):
+    def _timestepping(cls, func, grad_model=None):
+        def warp(self, grad_model=grad_model):
             self.timestep += 1
             self._create_tb(f"t{self.timestep:03d}")
-            func(self)
+            func(self,grad_model)
             self.save_ckpt()
         return warp
 

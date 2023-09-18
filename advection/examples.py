@@ -6,13 +6,7 @@ def get_examples(src, mu=-1.5, **kwargs):
     # select source function
     if src == 'example1':
         source_func = partial(gaussian_like, mu=mu)
-    else:
-        raise NotImplementedError
-    return source_func
-
-def get_examples_grad(src, mu=-1.5, **kwargs):
-    # select source function
-    if src == 'example1':
+    elif src == 'example1_grad':
         source_func = partial(gaussian_gradient, mu=mu)
     else:
         raise NotImplementedError
