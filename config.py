@@ -42,9 +42,6 @@ class Config(object):
             return
 
         if args.ckpt is None and os.path.exists(self.exp_dir):
-            response = input('Experiment log/model already exists, overwrite? (y/n) ')
-            if response != 'y':
-                exit()
             shutil.rmtree(self.exp_dir)
         for path in [self.log_dir, self.model_dir]:
             os.makedirs(path)
