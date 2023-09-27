@@ -115,17 +115,6 @@ class Advection1DModel(BaseModel):
         bc_loss = torch.mean(bound_u ** 2) * 1.
         loss_dict.update({'bc': bc_loss})
 
-        values, samples = self.sample_field(self.vis_resolution, return_samples=True)
-        values = values.detach().cpu()
-        ref = get_examples(self.cfg.init_cond, mu=-1.5 + self.dt*self.t*self.vel)(samples)
-        ref = ref.detach().cpu()
-
-        mae = nn.L1Loss()
-        true_error = mae(values, ref)
-        loss_dict.update({'true_error': true_error})
-
-
-
         return loss_dict
     
     def _compute_groundtruth(self, samples):
