@@ -110,7 +110,16 @@ class Advection1DModel(BaseModel):
         values, samples = self.sample_field(self.vis_resolution, return_samples=True)
         
         values = values.detach().cpu().numpy()
-        ref = get_examples(self.cfg.init_cond, mu=-1.5 + self.dt*self.timestep*self.vel)(samples)
+        if "example2" in self.cfg.init_cond:
+            updated_mu = [
+                -1.5 + self.dt*self.timestep*self.vel,
+                -1.0 + self.dt*self.timestep*self.vel,
+                -0.5 + self.dt*self.timestep*self.vel
+            ]
+        else:
+            updated_mu = -1.5 + self.dt*self.timestep*self.vel
+
+        ref = get_examples(self.cfg.init_cond, mu=updated_mu)(samples)
         
         samples = samples.detach().cpu().numpy()
         ref = ref.detach().cpu().numpy()

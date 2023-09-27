@@ -136,8 +136,19 @@ class AdvectionGrad1DModel(BaseModel):
         values, samples = self.sample_field(self.vis_resolution, return_samples=True)
         
         values = values.detach().cpu().numpy()
-        ref = get_examples(self.cfg.init_cond, mu=-1.5 + self.dt*self.timestep*self.vel)(samples)
-        
+
+        if "example2" in self.cfg.init_cond:
+            updated_mu = [
+                -1.5 + self.dt*self.timestep*self.vel,
+                -1.0 + self.dt*self.timestep*self.vel,
+                -0.5 + self.dt*self.timestep*self.vel
+            ]
+        else:
+            updated_mu = -1.5 + self.dt*self.timestep*self.vel
+
+        print(updated_mu)
+        ref = get_examples(self.cfg.init_cond, mu=updated_mu)(samples)
+            
         samples = samples.detach().cpu().numpy()
         ref = ref.detach().cpu().numpy()
         fig = draw_signal1D(samples, values, y_gt=ref, y_max=1.0)
@@ -156,12 +167,6 @@ class AdvectionGrad1DModel(BaseModel):
         grad_w_detach = grad_w.detach().cpu().numpy()
         samples = samples.detach().cpu().numpy()
         fig_grad = draw_signal1D(samples, grad_w_detach, y_max=1.0)
-
-        save_path = os.path.join(output_folder, f"t{self.timestep:03d}_grad_w.png")
-        save_figure(fig_grad, save_path)
-
-        save_path = os.path.join(output_folder, f"t{self.timestep:03d}_grad_w.npz")
-        np.savez(save_path, grad_w_detach)
 
         fig_grad = draw_signal1D(samples, grad_w_detach)
         save_path = os.path.join(output_folder, f"t{self.timestep:03d}_grad_nolimit_w.png")
