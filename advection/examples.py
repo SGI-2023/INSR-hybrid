@@ -9,9 +9,13 @@ def get_examples(src, mu=-1.5, **kwargs):
     elif src == 'example1_grad':
         source_func = partial(gaussian_gradient, mu=mu)
     elif src == 'example2':
-        source_func = partial(gaussian_sum, mu=[-1.5, -1.0, -0.5], sigma=[0.1, 0.2, 0.1])
+        if not isinstance(mu, list):
+            mu = [-1.5, -1.0, -0.5]
+        source_func = partial(gaussian_sum, mu=mu, sigma=[0.1, 0.2, 0.1])
     elif src == 'example2_grad':
-        source_func = partial(gaussian_sum_gradient, mu=[-1.5, -1.0, -0.5], sigma=[0.1, 0.2, 0.1])
+        if not isinstance(mu, list):
+            mu = [-1.5, -1.0, -0.5]
+        source_func = partial(gaussian_sum_gradient, mu=mu, sigma=[0.1, 0.2, 0.1])
     else:
         raise NotImplementedError
     return source_func

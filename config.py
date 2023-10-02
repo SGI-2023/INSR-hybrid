@@ -75,10 +75,12 @@ class Config(object):
         parser_adv = subparsers.add_parser("advection", parents=[parent_parser])
         parser_flu = subparsers.add_parser("fluid", parents=[parent_parser])
         parser_ela = subparsers.add_parser("elasticity", parents=[parent_parser])
+        parser_heat = subparsers.add_parser("diffusion", parents=[parent_parser])
         if self.is_train:
             self._add_advection_config_(parser_adv)
             self._add_fluid_config_(parser_flu)
             self._add_elasticity_config_(parser_ela)
+            self._add_heat_config_(parser_heat)
 
         args = parser.parse_args()
         return parser, args
@@ -131,6 +133,11 @@ class Config(object):
         group = parser.add_argument_group('advection')
         group.add_argument('-L','--length', type=float, default=4.0, help='field length')
         group.add_argument('--vel', type=float, default=0.25, help='constant velocity value')
+
+    def _add_heat_config_(self, parser):
+        group = parser.add_argument_group('diffusion')
+        group.add_argument('-L','--length', type=float, default=4.0, help='field length')
+        group.add_argument('-k', type=float, default=0.5, help='constant diffusion value')
 
     def _add_fluid_config_(self, parser):
         pass

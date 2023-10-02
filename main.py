@@ -11,6 +11,8 @@ elif cfg.pde == "fluid":
     from fluid import Fluid2DModel as neuralModel
 elif cfg.pde == "elasticity":
     from elasticity import ElasticityModel as neuralModel
+elif cfg.pde == "diffusion":
+    from diffusion import Heat1DModel as neuralModel
 else:
     raise NotImplementedError
 model = neuralModel(cfg)
@@ -25,5 +27,5 @@ for t in range(cfg.n_timesteps + 1):
         model.initialize()
     else:
         model.step()
-    print("aqui")
+    print(f"Saving timestep {t} checkpoint...")
     model.write_output(output_folder)
