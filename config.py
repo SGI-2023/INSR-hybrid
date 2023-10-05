@@ -72,10 +72,12 @@ class Config(object):
         parser_adv = subparsers.add_parser("advection", parents=[parent_parser])
         parser_flu = subparsers.add_parser("fluid", parents=[parent_parser])
         parser_ela = subparsers.add_parser("elasticity", parents=[parent_parser])
+        parser_ela = subparsers.add_parser("burger", parents=[parent_parser])
         if self.is_train:
             self._add_advection_config_(parser_adv)
             self._add_fluid_config_(parser_flu)
             self._add_elasticity_config_(parser_ela)
+            self._add_burger_config_(parser_ela)
 
         args = parser.parse_args()
         return parser, args
@@ -132,6 +134,12 @@ class Config(object):
 
     def _add_fluid_config_(self, parser):
         pass
+
+    def _add_burger_config_(self, parser):
+        group = parser.add_argument_group('advection')
+        group.add_argument('-L','--length', type=float, default=4.0, help='field length')
+        group.add_argument('--mu', type=float, default=-0.25, help='Strenght of nonlinearity term')
+
 
     def _add_elasticity_config_(self, parser):
         group = parser.add_argument_group('elasticity')

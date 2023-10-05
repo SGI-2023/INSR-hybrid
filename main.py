@@ -13,11 +13,14 @@ elif cfg.pde == "fluid":
     from fluid import Fluid2DModel as neuralModel
 elif cfg.pde == "elasticity":
     from elasticity import ElasticityModel as neuralModel
+elif cfg.pde == 'burger':
+    from burger import Burger1DModel as neuralModel
+    from burger import BurgerGrad1DModel as gradModel
 else:
     raise NotImplementedError
 
-grad_cfg.init_cond = cfg.init_cond +  '_grad'
-grad_model = gradModel(grad_cfg)
+#grad_cfg.init_cond = cfg.init_cond +  '_grad'
+#grad_model = gradModel(grad_cfg)
 
 model = neuralModel(cfg)
 
@@ -28,11 +31,11 @@ os.makedirs(output_folder, exist_ok=True)
 for t in range(cfg.n_timesteps + 1):
     print(f"time step: {t}")
     if t == 0:
-        grad_model.initialize()
+        #grad_model.initialize()
         model.initialize()
     else:
-        grad_model.step()
-        model.step(grad_model)
+        #grad_model.step()
+        model.step()
 
-    grad_model.write_output(output_folder)
+    #grad_model.write_output(output_folder)
     model.write_output(output_folder)
