@@ -83,7 +83,7 @@ class Burger1DModel(BaseModel):
 
         exponential_term = 0.02*torch.exp(samples*self.mu)
 
-        grad_term_midpoint = prev_u*prev_w + curr_u*curr_w
+        grad_term_midpoint = ( curr_u)*(curr_w)
 
         loss = torch.mean((dudt - 0.5*(exponential_term - grad_term_midpoint)) ** 2)
         loss_dict = {'main': loss}
