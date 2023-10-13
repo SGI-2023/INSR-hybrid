@@ -109,7 +109,7 @@ class BurgerGrad1DModel(BaseModel):
         grad_term_midpoint = prev_w**2 + prev_u*grad_w
 
         loss = torch.mean(
-            (dudt - 0.5*(exponential_term - grad_term_midpoint)) ** 2)
+            (dudt - (exponential_term - grad_term_midpoint)) ** 2)
         loss_dict = {'main': loss}
 
         # Dirichlet boundary constraint
