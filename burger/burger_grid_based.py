@@ -1,8 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from PIL import Image, ImageDraw, ImageFont
 
 # Define the Gaussian function
-def gaussian(x, mu=0, sigma=0.1):
+def gaussian(x, mu, sigma):
     return np.exp(-0.5 * ((x - mu) / sigma) ** 2)
 
 # Source term
@@ -19,18 +20,18 @@ def forward_euler(u, x, dx, dt, mu):
     return u_new
 
 # Parameters
-L = 10.0
-N = 8000
+L = 30.0
+N = 4000
 dx = L / N
-x = np.linspace(-L/2, L/2, N)
+x = np.linspace(0, L, N)
 mu_val = -0.25
 sigma = L / 20
-dt = 0.0005  # Further reduced time step for stability
-T = 10.0
+dt = 0.0005
+T = 100.0
 num_steps = int(T/dt)
 
 # Initial condition
-u_initial = gaussian(x)
+u_initial = gaussian(x, L/5, sigma)
 u = u_initial.copy()
 
 # Plot initial condition to verify
@@ -38,19 +39,35 @@ plt.plot(x, u_initial, label="Initial Gaussian")
 plt.legend()
 plt.show()
 
-# Proceed only if initial condition looks good
 input("Press Enter to proceed with time evolution...")
 
-# Time integration
+# Time integration and plotting
+images = []
+plot_interval = 500  # adjust this value to control how often you want to plot/save an image
+
+fig, ax = plt.subplots()
+
 for n in range(num_steps):
-    print(f'Time step {n+1}/{num_steps}')
+    if n % plot_interval == 0:
+        print(f'Plotting step {n+1}/{num_steps}')
+        ax.clear()
+        ax.plot(x, u_initial, label="Original", linestyle='--')
+        ax.plot(x, u, label="Evolved")
+        ax.legend()
+        ax.set_title(f"Step {n+1}/{num_steps}")
+        ax.set_xlim(0, L)
+        ax.set_ylim(0, 1.2)
+        plt.xlabel("x")
+        plt.ylabel("u")
+        plt.pause(0.01)
+        
+        # Convert the Matplotlib plot to a PIL Image and append to the images list
+        plt.draw()
+        image = Image.frombytes('RGB', fig.canvas.get_width_height(), fig.canvas.tostring_rgb())
+        images.append(image)
+
     u = forward_euler(u, x, dx, dt, mu_val)
 
-# Plotting results
-plt.plot(x, u_initial, label="Original", linestyle='--')
-plt.plot(x, u, label="Evolved")
-plt.legend()
-plt.xlabel("x")
-plt.ylabel("u")
-plt.title("Nonlinear Advection with Source Term")
-plt.show()
+# Save as a GIF
+images[0].save('evolution.gif',
+               save_all=True, append_images=images[1:], optimize=False, duration=100, loop=0)
