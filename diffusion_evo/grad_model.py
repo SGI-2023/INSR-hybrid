@@ -8,7 +8,7 @@ from .examples import get_examples
 from .visualize import draw_signal1D, save_figure
 
 
-class Heat1DModel(BaseModel):
+class HeatLap1DModel(BaseModel):
     """heat equation with constant k"""
     def __init__(self, cfg):
         super().__init__(cfg)
@@ -50,7 +50,7 @@ class Heat1DModel(BaseModel):
         return grad_computed_flat, grid_samples_flat
 
     @BaseModel._timestepping
-    def initialize(self):
+    def initialize(self, lap_model=None):
         if not hasattr(self, "init_cond_func"):
             self.init_cond_func = get_examples(self.cfg.init_cond)
         self._initialize()
@@ -75,7 +75,7 @@ class Heat1DModel(BaseModel):
         self.tb.add_figure("field", fig, global_step=self.train_step)
 
     @BaseModel._timestepping
-    def step(self):
+    def step(self, lap_model=None):
         """heat: dudt = (k \cdot laplace)u"""
         self.field_prev.load_state_dict(self.field.state_dict())
         self._heat()
@@ -85,60 +85,57 @@ class Heat1DModel(BaseModel):
         """forward computation for heat"""
         samples = self._sample_in_training()
 
-        prev_u = self.field_prev(samples)
-        curr_u = self.field(samples)
-        dudt = (curr_u - prev_u) / self.dt # (N, sdim)
+        prev_w = self.field_prev(samples)
+        curr_w = self.field(samples)
+        dwdt = (curr_w - prev_w) / self.dt # (N, sdim)
 
         # midpoint time integrator
-        laplace_u = laplace(curr_u, samples)
-        laplace_u0 = laplace(prev_u, samples).detach()
-        loss = torch.mean((dudt - self.k * (laplace_u + laplace_u0) / 2.) ** 2)
+        laplace_w = laplace(curr_w, samples)
+        laplace_w0 = laplace(prev_w, samples).detach()
+        loss = torch.mean((dwdt - self.k * (laplace_w + laplace_w0) / 2.) ** 2)
         loss_dict = {'main': loss}
 
         # Dirichlet boundary constraint
         # FIXME: hard-coded zero boundary condition to sample 1% points near boundary
         #        and fixed factor 1.0 for boundary loss
         boundary_samples = sample_boundary(max(self.sample_resolution // 100, 10), 1, device=self.device) * self.length / 2
-        bound_u = self.field(boundary_samples)
-        bc_loss = torch.mean(bound_u ** 2) * 1.
+        bound_w = self.field(boundary_samples)
+        bc_loss = torch.mean(bound_w ** 2) * 1.
         loss_dict.update({'bc': bc_loss})
 
         return loss_dict
 
     def write_output(self, output_folder):
         values, samples = self.sample_field(self.vis_resolution, return_samples=True)
+        ref = get_examples(self.cfg.init_cond)(samples)
 
-        if self.timestep == 0:
-            ref = get_examples(self.cfg.init_cond)(samples)
-        
         values = values.detach().cpu().numpy()     
         samples = samples.detach().cpu().numpy()
         fig = draw_signal1D(samples, values)
 
-        save_path = os.path.join(output_folder, f"t{self.timestep:03d}_values.png")
+        save_path = os.path.join(output_folder, f"t{self.timestep:03d}_values_w.png")
         save_figure(fig, save_path)
         save_path = os.path.join(output_folder, f"t{self.timestep:03d}.npz")
         np.savez(save_path, values)
 
-        # ------------------------------------------------------------------ #
-        if self.timestep == 0:
-            ref = ref.detach().cpu().numpy()
-            fig = draw_signal1D(samples, ref)
-            save_path = os.path.join(output_folder, f"t{self.timestep:03d}_ref_IC.png")
-            save_figure(fig, save_path)
-
-        # ------------------------------------------------------------------ #
-
-        lap_u, samples = self.sample_field_laplacian(self.vis_resolution)
-
-        lap_u = lap_u.detach().cpu().numpy()
-        samples = samples.detach().cpu().numpy()
-        fig = draw_signal1D(samples, lap_u)
-
-        save_path = os.path.join(output_folder, f"t{self.timestep:03d}_lap_u.png")
+        ref = ref.detach().cpu().numpy()
+        fig = draw_signal1D(samples, ref)
+        save_path = os.path.join(output_folder, f"t{self.timestep:03d}_ref.png")
         save_figure(fig, save_path)
-        save_path = os.path.join(output_folder, f"t{self.timestep:03d}_lap_u.npz")
-        np.savez(save_path, lap_u)
+        
+
+        # ------------------------------------------------------------------ #
+
+        lap_w, samples = self.sample_field_laplacian(self.vis_resolution)
+
+        lap_w = lap_w.detach().cpu().numpy()
+        samples = samples.detach().cpu().numpy()
+        fig = draw_signal1D(samples, lap_w)
+
+        save_path = os.path.join(output_folder, f"t{self.timestep:03d}_lap_w.png")
+        save_figure(fig, save_path)
+        save_path = os.path.join(output_folder, f"t{self.timestep:03d}_lap_w.npz")
+        np.savez(save_path, lap_w)
 
 
         

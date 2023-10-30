@@ -8,6 +8,7 @@ def draw_signal1D(x, y, y_max=None, y_gt=None):
     ax.plot(x, y)
     if y_max is not None:
         ax.set_ylim(0, y_max)
+    
     #ax.set_aspect('equal')
     fig.tight_layout()
     return fig

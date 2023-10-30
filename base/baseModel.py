@@ -89,11 +89,14 @@ class BaseModel(ABC):
             p.requires_grad_(require_grad)
     
     @classmethod
-    def _timestepping(cls, func):
-        def warp(self):
+    def _timestepping(cls, func, lap_model=None):
+        def warp(self, lap_model=lap_model):
             self.timestep += 1
             self._create_tb(f"t{self.timestep:03d}")
-            func(self)
+            if lap_model is None:
+                func(self)
+            else:
+                func(self, lap_model)
             self.save_ckpt()
         return warp
 

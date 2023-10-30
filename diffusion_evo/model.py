@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
-from base import BaseModel, laplace, sample_random, sample_uniform, sample_boundary
+from base import BaseModel, laplace, sample_random, sample_uniform, sample_boundary, divergence
 from .examples import get_examples
 from .visualize import draw_signal1D, save_figure
 
@@ -50,7 +50,7 @@ class Heat1DModel(BaseModel):
         return grad_computed_flat, grid_samples_flat
 
     @BaseModel._timestepping
-    def initialize(self):
+    def initialize(self, lap_model=None):
         if not hasattr(self, "init_cond_func"):
             self.init_cond_func = get_examples(self.cfg.init_cond)
         self._initialize()
@@ -75,14 +75,14 @@ class Heat1DModel(BaseModel):
         self.tb.add_figure("field", fig, global_step=self.train_step)
 
     @BaseModel._timestepping
-    def step(self):
+    def step(self, lap_model):
         """heat: dudt = (k \cdot laplace)u"""
         self.field_prev.load_state_dict(self.field.state_dict())
-        self._heat()
+        self._heat(lap_model)
 
     @BaseModel._training_loop
-    def _heat(self):
-        """forward computation for heat"""
+    def _heat(self, lap_model):
+        """forward lap_model for heat"""
         samples = self._sample_in_training()
 
         prev_u = self.field_prev(samples)
@@ -90,9 +90,11 @@ class Heat1DModel(BaseModel):
         dudt = (curr_u - prev_u) / self.dt # (N, sdim)
 
         # midpoint time integrator
-        laplace_u = laplace(curr_u, samples)
-        laplace_u0 = laplace(prev_u, samples).detach()
-        loss = torch.mean((dudt - self.k * (laplace_u + laplace_u0) / 2.) ** 2)
+        w = lap_model.field(samples)
+        w = divergence(w, samples)
+        w0 = lap_model.field_prev(samples)
+        w0 = divergence(w0, samples).detach()
+        loss = torch.mean((dudt - self.k * (w + w0) / 2.) ** 2)
         loss_dict = {'main': loss}
 
         # Dirichlet boundary constraint
@@ -107,38 +109,16 @@ class Heat1DModel(BaseModel):
 
     def write_output(self, output_folder):
         values, samples = self.sample_field(self.vis_resolution, return_samples=True)
-
-        if self.timestep == 0:
-            ref = get_examples(self.cfg.init_cond)(samples)
         
         values = values.detach().cpu().numpy()     
         samples = samples.detach().cpu().numpy()
-        fig = draw_signal1D(samples, values)
+        fig = draw_signal1D(samples, values, y_max=1.0)
 
         save_path = os.path.join(output_folder, f"t{self.timestep:03d}_values.png")
         save_figure(fig, save_path)
         save_path = os.path.join(output_folder, f"t{self.timestep:03d}.npz")
         np.savez(save_path, values)
 
-        # ------------------------------------------------------------------ #
-        if self.timestep == 0:
-            ref = ref.detach().cpu().numpy()
-            fig = draw_signal1D(samples, ref)
-            save_path = os.path.join(output_folder, f"t{self.timestep:03d}_ref_IC.png")
-            save_figure(fig, save_path)
-
-        # ------------------------------------------------------------------ #
-
-        lap_u, samples = self.sample_field_laplacian(self.vis_resolution)
-
-        lap_u = lap_u.detach().cpu().numpy()
-        samples = samples.detach().cpu().numpy()
-        fig = draw_signal1D(samples, lap_u)
-
-        save_path = os.path.join(output_folder, f"t{self.timestep:03d}_lap_u.png")
-        save_figure(fig, save_path)
-        save_path = os.path.join(output_folder, f"t{self.timestep:03d}_lap_u.npz")
-        np.savez(save_path, lap_u)
 
 
         

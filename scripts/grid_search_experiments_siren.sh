@@ -1,14 +1,14 @@
-for i_omega0 in 5 30 
+for i_omega0 in 30
 do
-    for i_n_width in  128 256
-    do 
-        for i_hidden_layers in  5 6
+    for i_n_width in  64
+    do
+        for i_hidden_layers in  3
         do
-            for i_learning_rate in 0.00001 0.0001
+            for i_learning_rate in 0.001
             do
-                python main.py advection \
-                    --tag advect1D_complexIC_omega0_${i_omega0}_width_${i_n_width}_hidden_${i_hidden_layers}_lr_${i_learning_rate}\
-                    --init_cond example2 \
+                python main.py diffusion \
+                    --tag heat_2\
+                    --init_cond example1 \
                     --num_hidden_layers ${i_hidden_layers} \
                     --hidden_features ${i_n_width} \
                     --network siren \
@@ -16,10 +16,12 @@ do
                     --max_n_iters 20000 \
                     --early_stop_accum_step 1000 \
                     --dt 0.05 \
-                    -T 15 \
+                    -k 0.005\
+                    -T 50 \
+                    -L 2 \
                     --lr ${i_learning_rate}\
                     -g 0 \
-                    --omega_0 ${i_omega0} 
+                    --omega_0 ${i_omega0}
             done
         done
     done
