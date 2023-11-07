@@ -138,7 +138,7 @@ class Config(object):
     def _add_burger_config_(self, parser):
         group = parser.add_argument_group('advection')
         group.add_argument('-L','--length', type=float, default=4.0, help='field length')
-        group.add_argument('--mu', type=float, default=-0.25, help='Strenght of nonlinearity term')
+        group.add_argument('--mu', type=float, default=0.25, help='Strenght of nonlinearity term')
 
 
     def _add_elasticity_config_(self, parser):

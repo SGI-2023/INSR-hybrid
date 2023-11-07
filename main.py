@@ -1,5 +1,6 @@
 import os
 from config import Config
+import copy
 
 # create experiment config containing all hyperparameters
 cfg = Config("train")
@@ -31,11 +32,13 @@ os.makedirs(output_folder, exist_ok=True)
 for t in range(cfg.n_timesteps + 1):
     print(f"time step: {t}")
     if t == 0:
-        grad_model.initialize()
         model.initialize()
+        grad_model.initialize()
     else:
-        grad_model.step(model)
+        old_model_u_field = copy.deepcopy(model.field)
+
         model.step(grad_model)
+        grad_model.step(old_model_u_field)
 
     grad_model.write_output(output_folder)
     model.write_output(output_folder)

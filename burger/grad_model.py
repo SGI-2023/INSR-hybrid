@@ -91,20 +91,20 @@ class BurgerGrad1DModel(BaseModel):
         self._burger(mode_u)
 
     @BaseModel._training_loop
-    def _burger(self, mode_u):
+    def _burger(self, mode_u_field):
         """forward computation for burger"""
         samples = self._sample_in_training()
 
         prev_w = self.field_prev(samples)
         curr_w = self.field(samples)
 
-        prev_u = mode_u.field(samples)
+        prev_u = mode_u_field(samples)
         dudt = (curr_w - prev_w) / self.dt  # (N, sdim)
 
         # midpoint time integrator
         grad_w = gradient(curr_w, samples)
 
-        exponential_term = 0.02**self.mu*torch.exp(samples*self.mu)
+        exponential_term = 0.02*self.mu*torch.exp(samples*self.mu)
 
         grad_term_midpoint = prev_w**2 + prev_u*grad_w
 
