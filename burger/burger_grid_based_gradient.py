@@ -32,8 +32,8 @@ dx = L / N
 x = np.linspace(0, L, N)
 mu_val = 0.25
 sigma = L / 20
-dt = 0.000005
-T = .5
+dt = 0.0005
+T = 20.
 num_steps = int(T / dt)
 
 u_initial = gaussian(x, L / 5, sigma)
@@ -60,7 +60,7 @@ for n in range(num_steps):
         ax.plot(x, w, label="Evolved w (Gradient of u)", linestyle=':')
         ax.legend()
         ax.set_title(f"Step {n+1}/{num_steps}")
-        ax.set_xlim(0, L)
+        ax.set_xlim(0, L*2)
         ax.set_ylim(-1, 1.2)
         plt.xlabel("x")
         plt.ylabel("Values")
